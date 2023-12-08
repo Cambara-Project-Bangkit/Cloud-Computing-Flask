@@ -4,30 +4,41 @@ from PIL import Image
 from tensorflow.keras.models import load_model
 
 app = Flask(__name__)
+aksara_labels = ['Ba', 'Ca', 'Da','Ga', 'Ha','Ja', 'Ka','La','Ma','Na','Nga', 'Nya', 'Pa','Ra','Sa','Ta','Wa','Ya']
 
 model = load_model("model_cambara.h5", compile=False)
 @app.route("/prediction", methods=["POST"])
 def prediction():
     image = request.files["image"]
+    aksara = request.form["data"]
     if image:
         img = Image.open(image)
-        if img.mode != "RGB":
-            img.convert("RGB")
 
         img = img.resize((64,64))
-        img_array = np.asarray(img)
+        img = img.convert('L')
+        img_array = np.array(img)
+        img_array = img_array / 255.0
         img_array = np.expand_dims(img_array, axis=0)
-        normalized = (img_array.astype(np.float32) / 255 ) 
+        predictions = model.predict(img_array)
+
+        index = np.argmax(predictions)
+        predicted_label = aksara_labels[index]
+        confidence_score = predictions[0][index] * 100
+        formatted_confidence_score = "{:.2f}".format(confidence_score)
         
-        aksara_name = 'a'
-        accuracy_score = 90
-        response = {
-            "message":{
-                "aksara": aksara_name,
-                "accuracy": accuracy_score
+        if aksara.lower() == predicted_label.lower():
+            response = {
+                "message": "Success",
+                "data": {
+                    "accuracy": formatted_confidence_score
+                }
             }
+            return jsonify(response),200
+    else: 
+        response = {
+            "message": "No image file"
         }
-        return jsonify(response),200
+        return jsonify(response),400
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
