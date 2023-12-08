@@ -28,9 +28,18 @@ def prediction():
         
         if aksara.lower() == predicted_label.lower():
             response = {
-                "message": "Success",
+                "message": "Success. The predicted "+ aksara.capitalize() +" aksara from the handwriting is correct",
                 "data": {
                     "accuracy": formatted_confidence_score
+                }
+            }
+            return jsonify(response),200
+        else:
+            response = {
+                "message": "Success. The predicted "+ aksara.capitalize() +" aksara from the handwriting is not correct",
+                "data": {
+                    "accuracy": formatted_confidence_score,
+                    "predicted_aksara": predicted_label
                 }
             }
             return jsonify(response),200
